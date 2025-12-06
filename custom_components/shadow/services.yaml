@@ -1,0 +1,7 @@
+generate_svg:
+  name: Generate SVG
+  description: Force re-generation of the Shadow SVG
+  fields:
+    entity_id:
+      description: Target shadow sensor entity_id
+      example: sensor.shadow_elevation

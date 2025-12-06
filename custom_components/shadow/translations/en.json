@@ -1,0 +1,8 @@
+{
+  "services": {
+    "generate_svg": {
+      "name": "Generate SVG",
+      "description": "Force re-generation of the Shadow SVG"
+    }
+  }
+}
