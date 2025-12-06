@@ -1,7 +1,7 @@
 {
   "domain": "shadow",
   "name": "Shadow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "documentation": "https://github.com/clmun/Shadow",
   "requirements": [
     "astral==2.2",
@@ -11,5 +11,11 @@
   "codeowners": ["@clmun"],
   "iot_class": "local_polling",
   "integration_type": "hub",
-  "loggers": ["custom_components.shadow"]
+  "loggers": ["custom_components.shadow"],
+  "actions": [
+    {
+      "name": "generate_svg",
+      "description": "Force re-generation of the Shadow SVG"
+    }
+  ]
 }

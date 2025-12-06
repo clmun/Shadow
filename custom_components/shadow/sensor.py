@@ -111,3 +111,9 @@ class ShadowSensor(SensorEntity):
         except Exception as e:
             _LOGGER.exception("Shadow SVG generation failed: %s", e)
             self._available = False
+
+    async def async_perform_action(self, action: str, **kwargs):
+        """Handle actions defined in manifest.json."""
+        if action == "generate_svg":
+            await self.async_update_svg()
+
