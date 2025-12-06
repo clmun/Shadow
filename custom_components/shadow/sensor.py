@@ -4,16 +4,19 @@ import logging
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import (
-    CONF_LATITUDE, CONF_LONGITUDE, CONF_NAME, CONF_TIME_ZONE, CONF_ELEVATION
-)
+from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
-    DOMAIN, DEFAULT_NAME, DEFAULT_UPDATE_INTERVAL_MIN, DEFAULT_OUTPUT_PATH,
-    CONF_ALTITUDE, CONF_TOWN, CONF_OUTPUT_PATH, CONF_UPDATE_INTERVAL, CONF_TIMEZONE
+    DOMAIN,
+    DEFAULT_NAME,
+    DEFAULT_UPDATE_INTERVAL_MIN,
+    DEFAULT_OUTPUT_PATH,
+    CONF_TOWN,
+    CONF_OUTPUT_PATH,
+    CONF_UPDATE_INTERVAL,
 )
 from .shadow_core import Shadow, ShadowConfig
 
@@ -26,10 +29,10 @@ async def async_setup_platform(
     discovery_info=None
 ):
     name = config.get(CONF_NAME, DEFAULT_NAME)
-    latitude = config.get(CONF_LATITUDE, hass.config.latitude)
-    longitude = config.get(CONF_LONGITUDE, hass.config.longitude)
-    altitude = config.get(CONF_ALTITUDE, hass.config.elevation or 0)
-    timezone = config.get(CONF_TIMEZONE, hass.config.time_zone)
+    latitude = hass.config.latitude
+    longitude = hass.config.longitude
+    altitude = hass.config.elevation or 0
+    timezone = hass.config.time_zone
     town = config.get(CONF_TOWN, "Home")
     output_path = config.get(CONF_OUTPUT_PATH, DEFAULT_OUTPUT_PATH)
     update_interval_min = int(config.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL_MIN))
@@ -49,18 +52,7 @@ async def async_setup_platform(
     async def _scheduled_update(now):
         await entity.async_update_svg()
 
-    # periodic update
     async_track_time_interval(hass, _scheduled_update, timedelta(minutes=update_interval_min))
-
-    # service to force regeneration
-    async def handle_generate_svg(call):
-        target = call.data.get("entity_id")
-        if not target or target == entity.entity_id:
-            await entity.async_update_svg()
-        else:
-            _LOGGER.warning("Entity_id mismatch: %s", target)
-
-    hass.services.async_register(DOMAIN, "generate_svg", handle_generate_svg)
 
 
 class ShadowSensor(SensorEntity):

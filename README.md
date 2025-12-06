@@ -14,14 +14,17 @@ Integrarea este disponibilă via HACS ca custom repo.
 2. Sau adaugă repo-ul ca Custom Repository în HACS și instalează integrarea.
 3. Adaugă în `configuration.yaml`:
 
+## Configurare
+
+Integrarea folosește automat datele din Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`).
+
+Exemplu minimal:
+
 ```yaml
 sensor:
   - platform: shadow
     name: Shadow Elevation
-    latitude: 45.755365
-    longitude: 24.146149
-    altitude: 415
-    timezone: Europe/Bucharest
     town: Sibiu
     output_path: /config/www/shadow.svg
-    update_interval: 60  # minute
+    update_interval: 60
+
