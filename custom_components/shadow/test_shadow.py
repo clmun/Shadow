@@ -17,7 +17,7 @@ def main():
     shadow.refresh()
 
     # Generăm SVG
-    shadow.generate_svg()
+    shadow._build_svg()
 
     # Printăm câteva valori pentru verificare
     print("Town:", conf.town)
