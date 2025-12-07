@@ -22,6 +22,7 @@ from .shadow_core import Shadow, ShadowConfig
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
@@ -48,6 +49,9 @@ async def async_setup_platform(
 
     entity = ShadowSensor(name, shadow_conf)
     async_add_entities([entity])
+
+    # Generează SVG imediat la startup pentru a evita 404
+    await entity.async_update_svg()
 
     async def _scheduled_update(now):
         await entity.async_update_svg()
