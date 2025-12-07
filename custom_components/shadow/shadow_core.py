@@ -231,6 +231,13 @@ class Shadow:
         # Scriere non-blocking prin executorul Home Assistant
         await hass.async_add_executor_job(self._write_svg, svg_content)
 
+    def generate_svg(self, hass):
+        """Compact wrapper for manifest action."""
+        return asyncio.run_coroutine_threadsafe(
+            self.async_generate_svg(hass),
+            asyncio.get_event_loop()
+        )
+
     def _debug(self):
         print("=== Debug Info ===")
         print("Town:", self.conf.town)
