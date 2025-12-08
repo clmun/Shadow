@@ -163,67 +163,164 @@ class Shadow:
         return p
 
     def _build_svg(self) -> str:
-        # Poziții soare/lună pe cerc
-        sun_pos = self.degrees_to_point(self.sun_azimuth, WIDTH / 2)
-        moon_pos = self.degrees_to_point(self.moon_azimuth, WIDTH / 2)
+        # Azimuth mapping: 0° = North, clockwise
+        def point_from_azimuth(d: float, r: float):
+            cx = WIDTH / 2
+            cy = HEIGHT / 2
+            theta = math.radians(d)
+            return {
+                'x': cx + r * math.sin(theta),
+                'y': cy - r * math.cos(theta)
+            }
+
+        # Signed area to get polygon winding (CW < 0, CCW > 0)
+        def signed_area(poly):
+            s = 0.0
+            n = len(poly)
+            for i in range(n):
+                x0, y0 = poly[i]['x'], poly[i]['y']
+                x1, y1 = poly[(i + 1) % n]['x'], poly[(i + 1) % n]['y']
+                s += x0 * y1 - x1 * y0
+            return 0.5 * s
+
+        # Outward normal based on winding
+        def outward_normal(ex, ey, is_ccw):
+            # Edge vector e = (ex, ey)
+            # For CCW polygons, outward normal is (ey, -ex)
+            # For CW polygons, outward normal is (-ey, ex)
+            if is_ccw:
+                return (ey, -ex)
+            else:
+                return (-ey, ex)
+
+        # Light marker positions
+        sun_pos = point_from_azimuth(self.sun_azimuth, WIDTH / 2)
+        moon_pos = point_from_azimuth(self.moon_azimuth, WIDTH / 2)
 
         svg = '<?xml version="1.0" encoding="utf-8"?>'
         svg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 120 120">'
         svg += f'<circle cx="{WIDTH / 2}" cy="{HEIGHT / 2}" r="{WIDTH / 2 - 1}" fill="{BG_COLOR}"/>'
 
-        # Forma casei
+        # Shadow mask
+        svg += '<defs><mask id="shadowMask">'
+        svg += '<rect width="100%" height="100%" fill="black"/>'
+        svg += f'<circle cx="{WIDTH / 2}" cy="{HEIGHT / 2}" r="{WIDTH / 2 - 1}" fill="white"/>'
+        svg += '</mask></defs>'
+
+        # Base house outline
         svg += self.generate_path('none', PRIMARY_COLOR, SHAPE)
 
-        # --- Umbra ---
-        # Calculăm punctele extreme față de poziția soarelui/lunii
-        angle_pos = sun_pos if self.sun_elevation > 0 else moon_pos
+        # Choose active source
+        use_sun = self.sun_elevation > 0
+        use_moon = (not use_sun) and (self.moon_elevation > 0)
+        active = use_sun or use_moon
+        light_pos = sun_pos if use_sun else (moon_pos if use_moon else None)
+        active_elevation = self.sun_elevation if use_sun else (self.moon_elevation if use_moon else -1)
 
-        minPoint = -1
-        maxPoint = -1
-        minAngle = 999
-        maxAngle = -999
+        if active and light_pos is not None:
+            n = len(SHAPE)
+            # Centroid and light direction
+            cx = sum(p['x'] for p in SHAPE) / n
+            cy = sum(p['y'] for p in SHAPE) / n
+            Lx = light_pos['x'] - cx
+            Ly = light_pos['y'] - cy
 
-        for i, point in enumerate(SHAPE):
-            angle = -math.degrees(math.atan2(point['y'] - angle_pos['y'], point['x'] - angle_pos['x']))
-            if angle < minAngle:
-                minAngle = angle
-                minPoint = i
-            if angle > maxAngle:
-                maxAngle = angle
-                maxPoint = i
+            # Polygon winding
+            is_ccw = signed_area(SHAPE) > 0
 
-        minPointShadowX = SHAPE[minPoint]['x'] + WIDTH * math.cos(math.radians(minAngle))
-        minPointShadowY = SHAPE[minPoint]['y'] - HEIGHT * math.sin(math.radians(minAngle))
-        maxPointShadowX = SHAPE[maxPoint]['x'] + WIDTH * math.cos(math.radians(maxAngle))
-        maxPointShadowY = SHAPE[maxPoint]['y'] - HEIGHT * math.sin(math.radians(maxAngle))
+            # Mark lit edges using outward normals
+            edges = []
+            for i in range(n):
+                p0 = SHAPE[i]
+                p1 = SHAPE[(i + 1) % n]
+                ex = p1['x'] - p0['x']
+                ey = p1['y'] - p0['y']
+                nx, ny = outward_normal(ex, ey, is_ccw)
+                dot = nx * Lx + ny * Ly
+                edges.append({'i0': i, 'i1': (i + 1) % n, 'lit': dot > 0})
 
-        shadow = [
-                     {'x': maxPointShadowX, 'y': maxPointShadowY}
-                 ] + SHAPE[minPoint:maxPoint + 1] + [
-                     {'x': minPointShadowX, 'y': minPointShadowY}
-                 ]
+            # Longest contiguous lit chain (wrap once)
+            best_start = None
+            best_len = 0
+            cur_start = None
+            cur_len = 0
+            for i in range(len(edges) * 2):
+                e = edges[i % len(edges)]
+                if e['lit']:
+                    if cur_start is None:
+                        cur_start = i
+                        cur_len = 1
+                    else:
+                        cur_len += 1
+                    if cur_len > best_len:
+                        best_len = cur_len
+                        best_start = cur_start
+                else:
+                    cur_start = None
+                    cur_len = 0
 
-        shadow_svg = self.generate_path('none', 'black', shadow,
-                                        'mask="url(#shadowMask)" fill-opacity="0.5"')
+            # Construct side1 (lit vertices) and side2 (the complementary chain)
+            side1 = []
+            side2 = []
+            if best_len > 0:
+                for k in range(best_len):
+                    e = edges[(best_start + k) % len(edges)]
+                    side1.append({'x': SHAPE[e['i0']]['x'], 'y': SHAPE[e['i0']]['y']})
+                last_e = edges[(best_start + best_len - 1) % len(edges)]
+                side1.append({'x': SHAPE[last_e['i1']]['x'], 'y': SHAPE[last_e['i1']]['y']})
 
-        if self.sun_elevation > 0 or self.moon_elevation > 0:
-            svg += shadow_svg
+                start_idx = edges[best_start % len(edges)]['i0']
+                i_idx = last_e['i1']
+                while True:
+                    side2.append({'x': SHAPE[i_idx]['x'], 'y': SHAPE[i_idx]['y']})
+                    if i_idx == start_idx:
+                        break
+                    i_idx = (i_idx + 1) % n
 
-        # --- Arce zi/noapte ---
+                # Shadow length by altitude (works for sun and moon)
+                shadow_length = min(WIDTH * 2, WIDTH / max(0.001, math.tan(math.radians(active_elevation))))
+
+                # Projection angles of illuminated chain endpoints relative to light_pos
+                def proj(pt):
+                    dx = pt['x'] - light_pos['x']
+                    dy = pt['y'] - light_pos['y']
+                    ang = math.degrees(math.atan2(-dy, dx))  # invert screen y to math y
+                    return (
+                        pt['x'] + shadow_length * math.cos(math.radians(ang)),
+                        pt['y'] - shadow_length * math.sin(math.radians(ang))
+                    )
+
+                min_proj_x, min_proj_y = proj(side1[0])
+                max_proj_x, max_proj_y = proj(side1[-1])
+
+                shadow = [{'x': max_proj_x, 'y': max_proj_y}] + side2 + [{'x': min_proj_x, 'y': min_proj_y}]
+                shadow_svg = self.generate_path('none', 'black', shadow, 'mask="url(#shadowMask)" fill-opacity="0.5"')
+
+                # Draw illuminated edge and shadow behind
+                svg += self.generate_path(LIGHT_COLOR, 'none', side1)
+                svg += shadow_svg
+            else:
+                # Fallback: draw full outline if no lit chain found
+                svg += self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+        else:
+            # No active source
+            svg += self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+
+        # Day/Night arcs
         svg += self.generate_arc(WIDTH / 2, PRIMARY_COLOR, 'none', self.sunset_azimuth, self.sunrise_azimuth)
         svg += self.generate_arc(WIDTH / 2, LIGHT_COLOR, 'none', self.sunrise_azimuth, self.sunset_azimuth)
 
-        # --- Tick marks răsărit/apus ---
+        # Sunrise/Sunset ticks
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.sunrise_azimuth, WIDTH / 2 - 2),
-            self.degrees_to_point(self.sunrise_azimuth, WIDTH / 2 + 2)
+            point_from_azimuth(self.sunrise_azimuth, WIDTH / 2 - 2),
+            point_from_azimuth(self.sunrise_azimuth, WIDTH / 2 + 2)
         ])
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.sunset_azimuth, WIDTH / 2 - 2),
-            self.degrees_to_point(self.sunset_azimuth, WIDTH / 2 + 2)
+            point_from_azimuth(self.sunset_azimuth, WIDTH / 2 - 2),
+            point_from_azimuth(self.sunset_azimuth, WIDTH / 2 + 2)
         ])
 
-        # --- Ore (arce pe cerc) ---
+        # Hour arcs
         for i in range(len(self.degs)):
             j = 0 if i == len(self.degs) - 1 else i + 1
             if i % 2 == 0:
@@ -233,24 +330,24 @@ class Shadow:
                 svg += self.generate_arc(WIDTH / 2 + 8, PRIMARY_COLOR, 'none', self.degs[i], self.degs[j],
                                          'stroke-width="3"')
 
-        # --- Tick 00:00 și 12:00 ---
+        # 00:00 and 12:00 ticks
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.degs[0], WIDTH / 2 + 5),
-            self.degrees_to_point(self.degs[0], WIDTH / 2 + 11)
+            point_from_azimuth(self.degs[0], WIDTH / 2 + 5),
+            point_from_azimuth(self.degs[0], WIDTH / 2 + 11)
         ])
         mid_index = len(self.degs) // 2
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.degs[mid_index], WIDTH / 2 + 5),
-            self.degrees_to_point(self.degs[mid_index], WIDTH / 2 + 11)
+            point_from_azimuth(self.degs[mid_index], WIDTH / 2 + 5),
+            point_from_azimuth(self.degs[mid_index], WIDTH / 2 + 11)
         ])
 
-        # --- Soare ---
+        # Sun marker
         if self.sun_elevation > 0:
             svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS}" fill="{SUN_COLOR}55" />'
             svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 1}" fill="{SUN_COLOR}99" />'
             svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 2}" fill="{SUN_COLOR}" />'
 
-        # --- Lună ---
+        # Moon phase marker
         phase = moon.phase(self.now)
         left_radius = MOON_RADIUS
         left_sweep = 0
