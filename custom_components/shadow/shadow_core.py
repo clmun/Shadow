@@ -9,6 +9,8 @@ import zoneinfo
 import pylunar
 from astral import sun, Observer
 from astral.location import LocationInfo
+from astral import moon
+
 
 # Constante vizuale
 WIDTH = 100
