@@ -161,58 +161,123 @@ class Shadow:
         return p
 
     def _build_svg(self) -> str:
+        # Flags pentru control modular
+        show_shadow = True
+        show_sun_moon = True
+        show_compass = True
+        show_hour_labels = True
+
         # Poziții soare/lună pe cerc
         sun_pos = self.degrees_to_point(self.sun_azimuth, WIDTH / 2)
         moon_pos = self.degrees_to_point(self.moon_azimuth, WIDTH / 2)
 
         svg = '<?xml version="1.0" encoding="utf-8"?>'
         svg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 120 120">'
-        svg += f'<circle cx="{WIDTH/2}" cy="{HEIGHT/2}" r="{WIDTH/2-1}" fill="{BG_COLOR}"/>'
+        svg += f'<circle cx="{WIDTH / 2}" cy="{HEIGHT / 2}" r="{WIDTH / 2 - 1}" fill="{BG_COLOR}"/>'
 
         # Forma casei (mereu)
         svg += self.generate_path('none', PRIMARY_COLOR, SHAPE)
 
-        # Arce: noapte și zi (din azimuturile reale de răsărit/apus)
-        svg += self.generate_arc(WIDTH/2, PRIMARY_COLOR, 'none', self.sunset_azimuth, self.sunrise_azimuth)
-        svg += self.generate_arc(WIDTH/2, LIGHT_COLOR, 'none', self.sunrise_azimuth, self.sunset_azimuth)
+        # --- Umbra ---
+        if show_shadow:
+            if self.sun_elevation > 0:
+                source_azimuth = self.sun_azimuth
+                source_elevation = self.sun_elevation
+            elif self.moon_elevation > 0:
+                source_azimuth = self.moon_azimuth
+                source_elevation = self.moon_elevation
+            else:
+                source_azimuth = None
 
-        # Tick marks la răsărit/apus
+            if source_azimuth is not None:
+                shadow_azimuth = source_azimuth + 180
+                length = 40 / max(math.tan(math.radians(source_elevation)), 0.1)
+                shadow_end = self.degrees_to_point(shadow_azimuth, length)
+                svg += self.generate_path("#000000", "none", [
+                    {"x": WIDTH / 2, "y": HEIGHT / 2},
+                    shadow_end
+                ], 'stroke-opacity="0.5" stroke-width="2"')
+
+        # --- Arce: noapte și zi ---
+        svg += self.generate_arc(WIDTH / 2, PRIMARY_COLOR, 'none', self.sunset_azimuth, self.sunrise_azimuth)
+        svg += self.generate_arc(WIDTH / 2, LIGHT_COLOR, 'none', self.sunrise_azimuth, self.sunset_azimuth)
+
+        # --- Tick marks la răsărit/apus ---
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.sunrise_azimuth, WIDTH/2-2),
-            self.degrees_to_point(self.sunrise_azimuth, WIDTH/2+2)
+            self.degrees_to_point(self.sunrise_azimuth, WIDTH / 2 - 2),
+            self.degrees_to_point(self.sunrise_azimuth, WIDTH / 2 + 2)
         ])
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.sunset_azimuth, WIDTH/2-2),
-            self.degrees_to_point(self.sunset_azimuth, WIDTH/2+2)
+            self.degrees_to_point(self.sunset_azimuth, WIDTH / 2 - 2),
+            self.degrees_to_point(self.sunset_azimuth, WIDTH / 2 + 2)
         ])
 
-        # Orele (arce pe cerc bazate pe azimut solar per oră — stil original)
+        # --- Orele (arce pe cerc) ---
         for i in range(len(self.degs)):
             j = 0 if i == len(self.degs) - 1 else i + 1
             if i % 2 == 0:
-                svg += self.generate_arc(WIDTH/2+8, PRIMARY_COLOR, 'none', self.degs[i], self.degs[j],
+                svg += self.generate_arc(WIDTH / 2 + 8, PRIMARY_COLOR, 'none', self.degs[i], self.degs[j],
                                          'stroke-width="3" stroke-opacity="0.2"')
             else:
-                svg += self.generate_arc(WIDTH/2+8, PRIMARY_COLOR, 'none', self.degs[i], self.degs[j],
+                svg += self.generate_arc(WIDTH / 2 + 8, PRIMARY_COLOR, 'none', self.degs[i], self.degs[j],
                                          'stroke-width="3"')
 
-        # Tick 00:00 și 12:00 (index 0 și mijloc)
+        # --- Tick 00:00 și 12:00 ---
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.degs[0], WIDTH/2+5),
-            self.degrees_to_point(self.degs[0], WIDTH/2+11)
+            self.degrees_to_point(self.degs[0], WIDTH / 2 + 5),
+            self.degrees_to_point(self.degs[0], WIDTH / 2 + 11)
         ])
         mid_index = len(self.degs) // 2
         svg += self.generate_path(LIGHT_COLOR, 'none', [
-            self.degrees_to_point(self.degs[mid_index], WIDTH/2+5),
-            self.degrees_to_point(self.degs[mid_index], WIDTH/2+11)
+            self.degrees_to_point(self.degs[mid_index], WIDTH / 2 + 5),
+            self.degrees_to_point(self.degs[mid_index], WIDTH / 2 + 11)
         ])
 
-        # Markeri soare/lună (gri dacă sunt sub orizont)
-        sun_color = SUN_COLOR if self.sun_elevation > 0 else "#666666"
-        svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS}" fill="{sun_color}" />'
+        # --- Etichete orare ---
+        if show_hour_labels:
+            for i, deg in enumerate(self.degs):
+                pt = self.degrees_to_point(deg, WIDTH / 2 + 12)
+                svg += f'<text x="{pt["x"]}" y="{pt["y"]}" font-size="3" fill="white">{i}:00</text>'
 
-        moon_color = MOON_COLOR if self.moon_elevation > 0 else "#444444"
-        svg += f'<circle cx="{moon_pos["x"]}" cy="{moon_pos["y"]}" r="{MOON_RADIUS}" fill="{moon_color}" />'
+        # --- Busolă ---
+        if show_compass:
+            compass_radius = 8
+            directions = {'N': 0, 'E': 90, 'S': 180, 'W': 270}
+            for label, deg in directions.items():
+                pt = self.degrees_to_point(deg, compass_radius)
+                svg += f'<text x="{pt["x"]}" y="{pt["y"]}" font-size="4" fill="white">{label}</text>'
+
+        # --- Soare și lună ---
+        if show_sun_moon:
+            # Luna (arce pentru fază)
+            phase = moon.phase(self.now)
+            left_radius = MOON_RADIUS
+            left_sweep = 0
+            right_radius = MOON_RADIUS
+            right_sweep = 0
+            if phase > 14:
+                right_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
+                if right_radius < 0:
+                    right_radius = -right_radius
+                    right_sweep = 0
+                else:
+                    right_sweep = 1
+            if phase < 14:
+                left_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
+                if left_radius < 0:
+                    left_radius = -left_radius
+                    left_sweep = 1
+
+            if self.moon_elevation > 0:
+                svg += f'<path stroke="none" fill="{MOON_COLOR}" d="M {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} ' \
+                       f'A {left_radius} {MOON_RADIUS} 0 0 {left_sweep} {moon_pos["x"]} {moon_pos["y"] + MOON_RADIUS} ' \
+                       f'A {right_radius} {MOON_RADIUS} 0 0 {right_sweep} {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} z" />'
+
+            # Soare (cercuri concentrice)
+            if self.sun_elevation > 0:
+                svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS}" fill="{SUN_COLOR}55" />'
+                svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 1}" fill="{SUN_COLOR}99" />'
+                svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 2}" fill="{SUN_COLOR}" />'
 
         svg += '</svg>'
         return svg
