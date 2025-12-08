@@ -163,12 +163,6 @@ class Shadow:
         return p
 
     def _build_svg(self) -> str:
-        # Flags pentru control modular
-        show_shadow = True
-        show_sun_moon = True
-        show_compass = True
-        show_hour_labels = True
-
         # Poziții soare/lună pe cerc
         sun_pos = self.degrees_to_point(self.sun_azimuth, WIDTH / 2)
         moon_pos = self.degrees_to_point(self.moon_azimuth, WIDTH / 2)
@@ -177,34 +171,49 @@ class Shadow:
         svg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 120 120">'
         svg += f'<circle cx="{WIDTH / 2}" cy="{HEIGHT / 2}" r="{WIDTH / 2 - 1}" fill="{BG_COLOR}"/>'
 
-        # Forma casei (mereu)
+        # Forma casei
         svg += self.generate_path('none', PRIMARY_COLOR, SHAPE)
 
         # --- Umbra ---
-        if show_shadow:
-            if self.sun_elevation > 0:
-                source_azimuth = self.sun_azimuth
-                source_elevation = self.sun_elevation
-            elif self.moon_elevation > 0:
-                source_azimuth = self.moon_azimuth
-                source_elevation = self.moon_elevation
-            else:
-                source_azimuth = None
+        # Calculăm punctele extreme față de poziția soarelui/lunii
+        angle_pos = sun_pos if self.sun_elevation > 0 else moon_pos
 
-            if source_azimuth is not None:
-                shadow_azimuth = source_azimuth + 180
-                length = 40 / max(math.tan(math.radians(source_elevation)), 0.1)
-                shadow_end = self.degrees_to_point(shadow_azimuth, length)
-                svg += self.generate_path("#000000", "none", [
-                    {"x": WIDTH / 2, "y": HEIGHT / 2},
-                    shadow_end
-                ], 'stroke-opacity="0.5" stroke-width="2"')
+        minPoint = -1
+        maxPoint = -1
+        minAngle = 999
+        maxAngle = -999
 
-        # --- Arce: noapte și zi ---
+        for i, point in enumerate(SHAPE):
+            angle = -math.degrees(math.atan2(point['y'] - angle_pos['y'], point['x'] - angle_pos['x']))
+            if angle < minAngle:
+                minAngle = angle
+                minPoint = i
+            if angle > maxAngle:
+                maxAngle = angle
+                maxPoint = i
+
+        minPointShadowX = SHAPE[minPoint]['x'] + WIDTH * math.cos(math.radians(minAngle))
+        minPointShadowY = SHAPE[minPoint]['y'] - HEIGHT * math.sin(math.radians(minAngle))
+        maxPointShadowX = SHAPE[maxPoint]['x'] + WIDTH * math.cos(math.radians(maxAngle))
+        maxPointShadowY = SHAPE[maxPoint]['y'] - HEIGHT * math.sin(math.radians(maxAngle))
+
+        shadow = [
+                     {'x': maxPointShadowX, 'y': maxPointShadowY}
+                 ] + SHAPE[minPoint:maxPoint + 1] + [
+                     {'x': minPointShadowX, 'y': minPointShadowY}
+                 ]
+
+        shadow_svg = self.generate_path('none', 'black', shadow,
+                                        'mask="url(#shadowMask)" fill-opacity="0.5"')
+
+        if self.sun_elevation > 0 or self.moon_elevation > 0:
+            svg += shadow_svg
+
+        # --- Arce zi/noapte ---
         svg += self.generate_arc(WIDTH / 2, PRIMARY_COLOR, 'none', self.sunset_azimuth, self.sunrise_azimuth)
         svg += self.generate_arc(WIDTH / 2, LIGHT_COLOR, 'none', self.sunrise_azimuth, self.sunset_azimuth)
 
-        # --- Tick marks la răsărit/apus ---
+        # --- Tick marks răsărit/apus ---
         svg += self.generate_path(LIGHT_COLOR, 'none', [
             self.degrees_to_point(self.sunrise_azimuth, WIDTH / 2 - 2),
             self.degrees_to_point(self.sunrise_azimuth, WIDTH / 2 + 2)
@@ -214,7 +223,7 @@ class Shadow:
             self.degrees_to_point(self.sunset_azimuth, WIDTH / 2 + 2)
         ])
 
-        # --- Orele (arce pe cerc) ---
+        # --- Ore (arce pe cerc) ---
         for i in range(len(self.degs)):
             j = 0 if i == len(self.degs) - 1 else i + 1
             if i % 2 == 0:
@@ -235,51 +244,35 @@ class Shadow:
             self.degrees_to_point(self.degs[mid_index], WIDTH / 2 + 11)
         ])
 
-        # --- Etichete orare ---
-        if show_hour_labels:
-            for i, deg in enumerate(self.degs):
-                pt = self.degrees_to_point(deg, WIDTH / 2 + 12)
-                svg += f'<text x="{pt["x"]}" y="{pt["y"]}" font-size="3" fill="white">{i}:00</text>'
+        # --- Soare ---
+        if self.sun_elevation > 0:
+            svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS}" fill="{SUN_COLOR}55" />'
+            svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 1}" fill="{SUN_COLOR}99" />'
+            svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 2}" fill="{SUN_COLOR}" />'
 
-        # --- Busolă ---
-        if show_compass:
-            compass_radius = 8
-            directions = {'N': 0, 'E': 90, 'S': 180, 'W': 270}
-            for label, deg in directions.items():
-                pt = self.degrees_to_point(deg, compass_radius)
-                svg += f'<text x="{pt["x"]}" y="{pt["y"]}" font-size="4" fill="white">{label}</text>'
+        # --- Lună ---
+        phase = moon.phase(self.now)
+        left_radius = MOON_RADIUS
+        left_sweep = 0
+        right_radius = MOON_RADIUS
+        right_sweep = 0
+        if phase > 14:
+            right_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
+            if right_radius < 0:
+                right_radius = -right_radius
+                right_sweep = 0
+            else:
+                right_sweep = 1
+        if phase < 14:
+            left_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
+            if left_radius < 0:
+                left_radius = -left_radius
+                left_sweep = 1
 
-        # --- Soare și lună ---
-        if show_sun_moon:
-            # Luna (arce pentru fază)
-            phase = moon.phase(self.now)
-            left_radius = MOON_RADIUS
-            left_sweep = 0
-            right_radius = MOON_RADIUS
-            right_sweep = 0
-            if phase > 14:
-                right_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
-                if right_radius < 0:
-                    right_radius = -right_radius
-                    right_sweep = 0
-                else:
-                    right_sweep = 1
-            if phase < 14:
-                left_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
-                if left_radius < 0:
-                    left_radius = -left_radius
-                    left_sweep = 1
-
-            if self.moon_elevation > 0:
-                svg += f'<path stroke="none" fill="{MOON_COLOR}" d="M {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} ' \
-                       f'A {left_radius} {MOON_RADIUS} 0 0 {left_sweep} {moon_pos["x"]} {moon_pos["y"] + MOON_RADIUS} ' \
-                       f'A {right_radius} {MOON_RADIUS} 0 0 {right_sweep} {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} z" />'
-
-            # Soare (cercuri concentrice)
-            if self.sun_elevation > 0:
-                svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS}" fill="{SUN_COLOR}55" />'
-                svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 1}" fill="{SUN_COLOR}99" />'
-                svg += f'<circle cx="{sun_pos["x"]}" cy="{sun_pos["y"]}" r="{SUN_RADIUS - 2}" fill="{SUN_COLOR}" />'
+        if self.moon_elevation > 0:
+            svg += f'<path stroke="none" fill="{MOON_COLOR}" d="M {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} ' \
+                   f'A {left_radius} {MOON_RADIUS} 0 0 {left_sweep} {moon_pos["x"]} {moon_pos["y"] + MOON_RADIUS} ' \
+                   f'A {right_radius} {MOON_RADIUS} 0 0 {right_sweep} {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} z" />'
 
         svg += '</svg>'
         return svg
