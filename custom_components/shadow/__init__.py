@@ -15,7 +15,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
         longitude = hass.config.longitude
         altitude = hass.config.elevation
         timezone = str(hass.config.time_zone)
-        output_path = hass.config.path("www/shadow.svg")
+        output_path = hass.config.path("www/images/shadow.svg")
 
         conf = ShadowConfig(
             latitude=latitude,
