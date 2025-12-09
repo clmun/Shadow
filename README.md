@@ -1,25 +1,46 @@
-# Shadow
+# Shadow SVG Generator
 
-Shadow este o integrare Home Assistant care:
-- calculează azimutul și elevația soarelui și lunii pentru o locație configurată
-- generează un SVG cu umbre pe un contur de casă 100x100
-- expune un senzor cu stare `elevation` (pozitiv: zi, negativ: noapte) și atribute utile
-- oferă un serviciu pentru re-generarea SVG la cerere
+A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.
+SVG image will illustrate where the Sun is currently positioned and which side of the house is facing the Sun.
+The integration uses automatically the dates from Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`)
+---
+## 🌟 Features
+- House shadow representation based on real-time Sun or Moon position.
+- Positioning based on user-defined location (town).
+- Customizable colors, dimensions, and shapes via `config.py`.
+- Easy integration with Home Assistant via HACS or manual installation.
+- Configurable update intervals for real-time shadow representation.
+- Output SVG file accessible via Home Assistant's web server.
+- Lightweight and efficient, suitable for various Home Assistant setups.
+--- 
+## Lovelace Example
+You can display the generated SVG in your Lovelace dashboard using the Picture Entity card or Picture card.
+```yaml
+type: picture-entity
+entity: sensor.shadow_elevation
+image: /local/shadow.svg
+```
+![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_day.png)
+![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_night_w_moon.png)
+---
+## 🚀 Installation
+### Add the Shadow integration via HACS: ###
+1. In HACS, go to "Integrations".
+2. Click on the three dots in the top right corner and select "Custom Repositories".
+3. Enter the repository URL: https://github.com/clmun/Shadow
+4. Select "Integration" as the category and click "Add".
+5. Restart Home Assistant.
+### Add the Shadow integration manual: ###
+1. Download the component from the GitHub repository: https://github.com/clmun/Shadow
+2. Extract the downloaded files.
+3. Create a directory named `shadow` in your Home Assistant `custom_components` folder if it doesn't already exist.
+4. Copy the extracted files into the `custom_components/shadow` directory.
+5. In `configuration.yaml`, add the Shadow sensor configuration as described above.
+6. Save the file and restart Home Assistant.
 
-Integrarea este disponibilă via HACS ca custom repo.
-
-## Instalare
-
-1. Copiază folderul `custom_components/shadow` în `<config>/custom_components/`.
-2. Sau adaugă repo-ul ca Custom Repository în HACS și instalează integrarea.
-3. Adaugă în `configuration.yaml`:
-
-## Configurare
-
-Integrarea folosește automat datele din Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`).
-
-Exemplu minimal:
-
+## 🔧 Setup Instructions
+1. Search for "Shadow" in HACS and install it.
+2. In configuration.yaml, add the Shadow sensor configuration as described below.
 ```yaml
 sensor:
   - platform: shadow
@@ -28,12 +49,53 @@ sensor:
     output_path: /config/www/shadow.svg
     update_interval: 60
 ```
+3. All settings needed for generating the picture (.svg format) are stored in `config.py` (colors, dimensions, shape coordinates).
+Minimal example configuration:
+ ```python
+WIDTH = 100
+HEIGHT = 100
+BG_COLOR = "black" # Background color
+PRIMARY_COLOR = "green" # Color of the shape
+LIGHT_COLOR = "yellow" # Color of the illuminated side
+SUN_RADIUS = 4 # Radius of the sun
+SUN_COLOR = "orange" # Color of the sun
+MOON_RADIUS = 4 # Radius of the moon
+MOON_COLOR = "gray" # Color of the moon
 
-## ☕ Susține dezvoltatorul
+SHAPE = [
+    {'x': 40, 'y': 40}, # Bottom-left corner
+    {'x': 60, 'y': 40}, # Bottom-right corner
+    {'x': 60, 'y': 60}, # Top-right corner
+    {'x': 40, 'y': 60}  # Top-left corner
+]
+```
+4. After configuring config.py file restart Home Assistant.
+5. The SVG file will be generated at the specified output path. /config/www/shadow.svg
+6. Access the SVG file via Home Assistant's web server at `http://<your-home-assistant-url>/local/shadow.svg`.
+7. You can then use this SVG in your Lovelace dashboard or other places within Home Assistant.
+8. Enjoy your dynamic shadow SVG graphics!
+---
 
-Dacă ți-a plăcut această integrare și vrei să sprijini munca depusă, **invită-mă la o cafea**! 🫶  
-Nu costă nimic, iar contribuția ta ajută la dezvoltarea viitoare a proiectului. 🙌  
+## ☕ Support me
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Susține%20dezvoltatorul-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/clmun01c)
+If you liked this integration and want to support the work done, **buy me a coffee!**  🫶
+It costs nothing, and your contribution helps the future development of the project. 🙌  
 
-Mulțumesc pentru sprijin și apreciez fiecare gest de susținere! 🤗
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20the%20developer-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/clmun01c)
+
+Thanks for support and I appreciate any support gesture! 🤗
+---
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+---
+## 📝 Disclaimer
+This integration is provided "as is" without warranty of any kind. Use at your own risk
+. The author is not responsible for any damage or data loss that may occur from using this integration.
+By using this integration, you agree to the terms of this disclaimer.
+---
+## 📧 Contact
+For questions, suggestions, or support, please reach out via the Home Assistant Community Forums or GitHub Issues page.
+- Home Assistant Community Forums: https://community.home-assistant.io/
+- GitHub Issues: https://github.com/clmun/Shadow/issues
+---
+
