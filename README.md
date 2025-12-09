@@ -1,6 +1,6 @@
 # Shadow SVG Generator #
 [![hacs_badge](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_day.png)]
-
+---
 ## 📄 Shadow SVG Generator
 A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.
 SVG image will illustrate where the Sun is currently positioned and which side of the house is facing the Sun.
@@ -39,7 +39,7 @@ image: /local/shadow.svg
 4. Copy the extracted files into the `custom_components/shadow` directory.
 5. In `configuration.yaml`, add the Shadow sensor configuration as described above.
 6. Save the file and restart Home Assistant.
-
+---
 ## 🔧 Setup Instructions
 1. Search for "Shadow" in HACS and install it.
 2. In configuration.yaml, add the Shadow sensor configuration as described below.
@@ -116,4 +116,3 @@ It costs nothing, and your contribution helps the future development of the proj
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20the%20developer-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/clmun01c)
 
 Thanks for support and I appreciate any support gesture! 🤗
----
