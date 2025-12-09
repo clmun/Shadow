@@ -10,30 +10,7 @@ import pylunar
 from astral import sun, Observer
 from astral.location import LocationInfo
 from astral import moon
-
-
-# Constante vizuale
-WIDTH = 100
-HEIGHT = 100
-PRIMARY_COLOR = '#1b3024'
-LIGHT_COLOR = '#26bf75'
-BG_COLOR = '#1a1919'
-SUN_COLOR = '#ffff66'
-SUN_RADIUS = 5
-MOON_COLOR = '#999999'
-MOON_RADIUS = 3
-
-# Forma casei (original)
-SHAPE = [
-    {'x': 35.34, 'y': 70.00},
-    {'x': 20.00, 'y': 38.54},
-    {'x': 70.33, 'y': 13.99},
-    {'x': 85.68, 'y': 45.45},
-    {'x': 68.37, 'y': 53.89},
-    {'x': 71.44, 'y': 60.18},
-    {'x': 55.71, 'y': 67.85},
-    {'x': 52.64, 'y': 61.56}
-]
+from config import WIDTH, HEIGHT, BG_COLOR, PRIMARY_COLOR, LIGHT_COLOR, SUN_RADIUS, SUN_COLOR, MOON_RADIUS, MOON_COLOR, SHAPE
 
 HOURS = 1
 
@@ -112,7 +89,8 @@ class Shadow:
 
         self._debug()
 
-    def decdeg2dms(self, dd: float):
+    @staticmethod
+    def decdeg2dms(dd: float):
         negative = dd < 0
         dd = abs(dd)
         minutes, seconds = divmod(dd * 3600, 60)
@@ -124,9 +102,10 @@ class Shadow:
                 minutes = -minutes
             else:
                 seconds = -seconds
-        return (int(degrees), int(minutes), int(seconds))
+        return int(degrees), int(minutes), int(seconds)
 
-    def degrees_to_point(self, d: float, r: float):
+    @staticmethod
+    def degrees_to_point(d: float, r: float):
         cx = WIDTH / 2
         cy = HEIGHT / 2
         d2 = 180 - d
@@ -135,7 +114,8 @@ class Shadow:
             'y': cy + math.cos(math.radians(d2)) * r
         }
 
-    def generate_path(self, stroke: str, fill: str, points: list[dict], attrs: str | None = None) -> str:
+    @staticmethod
+    def generate_path(stroke: str, fill: str, points: list[dict], attrs: str | None = None) -> str:
         p = f'<path stroke="{stroke}" stroke-width="1" fill="{fill}" '
         if attrs:
             p += f'{attrs} '
@@ -189,9 +169,9 @@ class Shadow:
             # For CCW polygons, outward normal is (ey, -ex)
             # For CW polygons, outward normal is (-ey, ex)
             if is_ccw:
-                return (ey, -ex)
+                return ey, -ex
             else:
-                return (-ey, ex)
+                return -ey, ex
 
         # Light marker positions
         sun_pos = point_from_azimuth(self.sun_azimuth, WIDTH / 2)
@@ -370,9 +350,10 @@ class Shadow:
             svg += f'<path stroke="none" fill="{MOON_COLOR}" d="M {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} ' \
                    f'A {left_radius} {MOON_RADIUS} 0 0 {left_sweep} {moon_pos["x"]} {moon_pos["y"] + MOON_RADIUS} ' \
                    f'A {right_radius} {MOON_RADIUS} 0 0 {right_sweep} {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} z" />'
-        # Timestamp în colțul dreapta jos
+
+        # Add the timestamp to the SVG in the bottom-right corner
         timestamp = self.now.strftime("%Y-%m-%d %H:%M:%S")
-        svg += f'<text x="{WIDTH - 5}" y="{HEIGHT - 5}" font-size="3" fill="yellow" text-anchor="end">{timestamp}</text>'
+        svg += f'<text x="{WIDTH + 5}" y="{HEIGHT + 10}" font-size="3" text-anchor="end" fill="yellow">{timestamp}</text>'
 
         svg += '</svg>'
         return svg
