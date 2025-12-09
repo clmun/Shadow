@@ -370,6 +370,9 @@ class Shadow:
             svg += f'<path stroke="none" fill="{MOON_COLOR}" d="M {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} ' \
                    f'A {left_radius} {MOON_RADIUS} 0 0 {left_sweep} {moon_pos["x"]} {moon_pos["y"] + MOON_RADIUS} ' \
                    f'A {right_radius} {MOON_RADIUS} 0 0 {right_sweep} {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} z" />'
+        # Timestamp în colțul dreapta jos
+        timestamp = self.now.strftime("%Y-%m-%d %H:%M:%S")
+        svg += f'<text x="{WIDTH - 5}" y="{HEIGHT - 5}" font-size="3" fill="yellow" text-anchor="end">{timestamp}</text>'
 
         svg += '</svg>'
         return svg
