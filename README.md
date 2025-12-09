@@ -1,5 +1,8 @@
-# Shadow SVG Generator
+# Shadow SVG Generator #
+[![hacs_badge](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_day.png)]
 
+
+---
 A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.
 SVG image will illustrate where the Sun is currently positioned and which side of the house is facing the Sun.
 The integration uses automatically the dates from Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`)
@@ -84,11 +87,10 @@ It costs nothing, and your contribution helps the future development of the proj
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20the%20developer-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/clmun01c)
 
 Thanks for support and I appreciate any support gesture! 🤗
----
 ## 📄 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
----
 ## 📝 Disclaimer
+---
 This integration is provided "as is" without warranty of any kind. Use at your own risk
 . The author is not responsible for any damage or data loss that may occur from using this integration.
 By using this integration, you agree to the terms of this disclaimer.
