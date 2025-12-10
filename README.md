@@ -1,4 +1,4 @@
-# Shadow SVG Generator
+# Shadow SVG Generator - Show Current Sun Position and Shadow of House
 ![Example Day](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Example_day.png)
 
 ---
