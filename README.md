@@ -55,7 +55,7 @@ sensor:
     output_path: /config/www/shadow.svg
     update_interval: 60
 ```
-3. All settings needed for generating the picture (.svg format) are stored in `config.py` (colors, dimensions, shape coordinates).
+3. All settings needed for generating the picture (.svg format) are stored in `shadow_config.py` (colors, dimensions, shape coordinates).
 Minimal example configuration:
  ```python
 WIDTH = 100
