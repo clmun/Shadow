@@ -153,4 +153,4 @@ It costs nothing, and your contribution helps the future development of the proj
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20the%20developer-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/clmun01c)
 
-Thanks for support and I appreciate any support gesture! 🤗
+Thanks for the support, I appreciate any gesture of support! 🤗
