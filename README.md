@@ -35,7 +35,7 @@ image: /local/shadow.svg
 3. Enter the repository URL: https://github.com/clmun/Shadow
 4. Select "Integration" as the category and click "Add".
 5. Restart Home Assistant.
-### Add the Shadow integration manual: ###
+### Add the Shadow integration manually: ###
 1. Download the component from the GitHub repository: https://github.com/clmun/Shadow
 2. Extract the downloaded files.
 3. Create a directory named `shadow` in your Home Assistant `custom_components` folder if it doesn't already exist.
