@@ -4,7 +4,7 @@ import math
 WIDTH = 100
 HEIGHT = 100
 
-def normalize_coords(coords, width=WIDTH, height=HEIGHT):
+def normalize_coords(coords, width=WIDTH, height=HEIGHT, eps=1e-9):
     """
     Transform a list of geographic coordinates (lat, lon)
     into a list of points (x, y) for SVG.
