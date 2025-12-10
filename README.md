@@ -130,7 +130,7 @@ This integration was inspired from OpenHAB community and adapted for Home Assist
 
 When I started with home automation, 10 years ago, I've started with OpenHAB and found this script and this idea fascinating.
 
-Later, when I moved to Home Assistant, I kept the script and had the shadow running for all this time, but always waited for somebody more experimented to bring this to Home Assistant.
+Later, when I moved to Home Assistant, I kept the script and had the shadow running for all this time, but always waited for somebody more experienced to bring this to Home Assistant.
 
 Well, in the end, with a big help from AI, I did it myself and share it now with the community.
 
