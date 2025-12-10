@@ -74,14 +74,45 @@ SHAPE = [
     {'x': 40, 'y': 60}  # Top-left corner
 ]
 ```
-4. After configuring config.py file restart Home Assistant.
+4. After configuring shadow_config.py file restart Home Assistant.
 5. The SVG file will be generated at the specified output path. /config/www/shadow.svg
 6. Access the SVG file via Home Assistant's web server at `http://<your-home-assistant-url>/local/shadow.svg`.
 7. You can then use this SVG in your Lovelace dashboard or other places within Home Assistant.
-8. Enjoy your dynamic shadow SVG graphics!
+8. Somehow the picture is not updating in the picture card. A solution is to add it as a camera entity using the local file camera integration: 
+```yaml
+camera:
+  - platform: local_file
+    name: Shadow Camera
+    file_path: /config/www/shadow.svg
+    content_type: image/svg+xml
+```
+Then use the camera entity in the picture card:
+```yaml
+type: picture-entity
+entity: camera.shadow_camera
+```
+or you can do this via UI.
+  
+9. Enjoy your dynamic shadow SVG graphics!
 ---
-
-
+## ⚙️ How to generate the points for shape
+To define the shape of your house or object in the SVG, you need to specify the coordinates of its corners in the `SHAPE` list within the `shadow_config.py` file. Each corner is represented as a dictionary with `x` and `y` keys.
+Here's how to generate the points for your shape:
+1. **Determine the Shape**: Decide on the shape you want to represent (e.g., rectangle, polygon).
+2. **Coordinate System**: The SVG coordinate system starts in the top-left corner (0,0). The `x` coordinate increases to the right, and the `y` coordinate increases downward.
+3. **Calculate Points**: For each corner of your shape, calculate its `x` and `y` coordinates based on the desired dimensions and position within the SVG canvas.
+4. **Create Point Dictionaries**: For each corner, create a dictionary with the calculated `x` and `y` values.
+5. **Use the Following Methods to Get Coordinates**:
+   - **Graph Paper Method**:
+     1. Print a piece of graph paper.
+     2. Draw the shape of your house on the graph paper.
+     3. Count the squares to determine the `x` and `y` coordinates of each corner.
+     4. Scale the coordinates if necessary to fit within the SVG dimensions. (SVG size is 100x100 by default, so you might need to scale down your measurements accordingly.)
+   - **Google Maps Method**:
+     1. Open Google Maps and locate your house.
+     2. Use the "Measure distance" tool to find the coordinates of each corner of your house. (right-click on the map to access it)
+     3. Copy the latitude and longitude coordinates for each corner and put them into the script from tools/shape_generator.py to generate the SHAPE list.
+     4. Scale the coordinates if necessary to fit within the SVG dimensions. (SVG size is 100x100 by default, so you might need to scale down your measurements accordingly.)
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
