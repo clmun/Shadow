@@ -1,5 +1,5 @@
 # Shadow SVG Generator
-![Example Day](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_day.png)
+![Example Day](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Example_day.png)
 
 ---
 
@@ -25,8 +25,9 @@ type: picture-entity
 entity: sensor.shadow_elevation
 image: /local/shadow.svg
 ```
-![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_day.png)
-![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/main/images/Example_night_w_moon.png)
+
+![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Example_day.png)
+![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Example_night_w_moon.png)
 ---
 ## 🚀 Installation
 ### Add the Shadow integration via HACS: ###
