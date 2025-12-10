@@ -126,7 +126,7 @@ By using this integration, you agree to the terms of this disclaimer.
 
 
 ## Inspiration
-This integration was inspired from OpenHAB community and adapted for Home Assistant.
+This integration was inspired by the OpenHAB community and adapted for Home Assistant.
 
 When I started with home automation, 10 years ago, I've started with OpenHAB and found this script and this idea fascinating.
 
