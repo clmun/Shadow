@@ -10,7 +10,7 @@ import pylunar
 from astral import sun, Observer
 from astral.location import LocationInfo
 from astral import moon
-from config import WIDTH, HEIGHT, BG_COLOR, PRIMARY_COLOR, LIGHT_COLOR, SUN_RADIUS, SUN_COLOR, MOON_RADIUS, MOON_COLOR, SHAPE
+from .shadow_config import WIDTH, HEIGHT, BG_COLOR, PRIMARY_COLOR, LIGHT_COLOR, SUN_RADIUS, SUN_COLOR, MOON_RADIUS, MOON_COLOR, SHAPE
 
 HOURS = 1
 

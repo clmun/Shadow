@@ -12,7 +12,7 @@ The integration automatically uses data from Home Assistant (`latitude`, `longit
 ## 🌟 Features
 - House shadow representation based on real-time Sun or Moon position.
 - Positioning based on user-defined location (town).
-- Customizable colors, dimensions, and shapes via `config.py`.
+- Customizable colors, dimensions, and shapes via `shadow_config.py`.
 - Easy integration with Home Assistant via HACS or manual installation.
 - Configurable update intervals for real-time shadow representation.
 - Output SVG file accessible via Home Assistant's web server.
