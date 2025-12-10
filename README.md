@@ -75,7 +75,7 @@ SHAPE = [
 ]
 ```
 4. After configuring shadow_config.py file restart Home Assistant.
-5. The SVG file will be generated at the specified output path. /config/www/shadow.svg
+5. The SVG file will be generated at the specified output path: `/config/www/shadow.svg`.
 6. Access the SVG file via Home Assistant's web server at `http://<your-home-assistant-url>/local/shadow.svg`.
 7. You can then use this SVG in your Lovelace dashboard or other places within Home Assistant.
 8. Somehow the picture is not updating in the picture card. A solution is to add it as a camera entity using the local file camera integration: 
