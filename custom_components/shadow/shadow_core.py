@@ -31,21 +31,21 @@ class Shadow:
         self.now = datetime.now(self.timezone)
         self.nowUTC = datetime.now(zoneinfo.ZoneInfo("UTC"))
 
-        # Observer explicit (corect pentru astral)
+        # Explicit observer (correct for astral)
         self._observer = Observer(
             latitude=self.conf.latitude,
             longitude=self.conf.longitude,
             elevation=self.conf.altitude
         )
 
-        # Date solare (cu tzinfo explicit)
+        # Solar dates (with tzinfo explicit)
         self.sun_data = sun.sun(self._observer, date=self.now.date(), tzinfo=self.timezone)
         self.sunrise_azimuth = sun.azimuth(self._observer, self.sun_data['sunrise'])
         self.sunset_azimuth = sun.azimuth(self._observer, self.sun_data['sunset'])
         self.sun_azimuth = sun.azimuth(self._observer, self.now)
         self.sun_elevation = sun.elevation(self._observer, self.now)
 
-        # Azimutul soarelui la fiecare oră (ore locale)
+        # Solar azimuths for each hour (local time)
         self.degs = []
         local_date = self.now.date()
         for i in range(0, 24, HOURS):
@@ -53,13 +53,13 @@ class Shadow:
             a = sun.azimuth(self._observer, hour_time)
             self.degs.append(float(a) if a is not None else 0)
 
-        # Date lunare
+        # Moon data
         self.moon_info = pylunar.MoonInfo(self.decdeg2dms(conf.latitude), self.decdeg2dms(conf.longitude))
         self.moon_info.update(self.nowUTC.replace(tzinfo=None))
         self.moon_azimuth = self.moon_info.azimuth()
         self.moon_elevation = self.moon_info.altitude()
 
-        # Sursa curentă de lumină (altitudine)
+        # Current light source (elevation)
         self.elevation = self.sun_elevation if self.sun_elevation > 0 else self.moon_elevation
 
         self._debug()
@@ -187,105 +187,77 @@ class Shadow:
     def _svg_outline(self) -> str:
         return self.generate_path('none', PRIMARY_COLOR, SHAPE)
 
-    def _svg_shadow(self, sun_pos, moon_pos) -> str:
+    @staticmethod
+    def _calculate_min_max(shape, real_pos):
+        min_point = -1
+        max_point = -1
+        min_angle = 999.0
+        max_angle = -999.0
+        for i, pt in enumerate(shape):
+            angle = -math.degrees(math.atan2(pt['y'] - real_pos['y'], pt['x'] - real_pos['x']))
+            if angle < min_angle:
+                min_angle = angle
+                min_point = i
+            if angle > max_angle:
+                max_angle = angle
+                max_point = i
+        return min_point, max_point
+
+    @staticmethod
+    def _slice_shape(shape, start, end):
+        out = []
+        i = start
+        n = len(shape)
+        while True:
+            out.append(shape[i])
+            if i == end:
+                break
+            i = (i + 1) % n
+        return out
+
+    @staticmethod
+    def _project_point(pt, shadow_length, az):
+        opp_deg = -az + 270.0
+        vx = math.cos(math.radians(opp_deg))
+        vy = math.sin(math.radians(opp_deg))
+        return {'x': pt['x'] + shadow_length * vx, 'y': pt['y'] - shadow_length * vy}
+
+    def _svg_shadow(self, shape, sun_pos, moon_pos) -> str:
         use_sun = self.sun_elevation > 0
         use_moon = (not use_sun) and (self.moon_elevation > 0)
         if not (use_sun or use_moon):
-            return self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+            return self.generate_path(PRIMARY_COLOR, 'none', shape)
 
-        # selectăm sursa de lumină
         elev = self.sun_elevation if use_sun else self.moon_elevation
         az = self.sun_azimuth if use_sun else self.moon_azimuth
         base_pos = sun_pos if use_sun else moon_pos
 
-        # centru
+        # build far real_pos to stabilize angle calculation
         cx, cy = WIDTH / 2.0, HEIGHT / 2.0
-
-        # construim un "real_pos" îndepărtat pe aceeași direcție ca base_pos (evită erori la atan2 cu sursă prea aproape)
-        ux = base_pos['x'] - cx
-        uy = base_pos['y'] - cy
+        ux, uy = base_pos['x'] - cx, base_pos['y'] - cy
         norm = math.hypot(ux, uy) or 1.0
-        real_pos = {
-            'x': cx + (ux / norm) * 10000.0,
-            'y': cy + (uy / norm) * 10000.0
-        }
+        real_pos = {'x': cx + (ux / norm) * 10000.0, 'y': cy + (uy / norm) * 10000.0}
 
-        # helper: min/max pe baza unghiului către sursa de lumină îndepărtată (stabil ca în codul tău original)
-        def calculate_min_max(shape):
-            min_point = -1
-            max_point = -1
-            min_angle = 999.0
-            max_angle = -999.0
-            for i, pt in enumerate(shape):
-                angle = -math.degrees(math.atan2(pt['y'] - real_pos['y'], pt['x'] - real_pos['x']))
-                if angle < min_angle:
-                    min_angle = angle
-                    min_point = i
-                if angle > max_angle:
-                    max_angle = angle
-                    max_point = i
-            return min_point, max_point
-
-        # helper: decupare circulară între doi indici
-        def slice_shape(shape, start, end):
-            out = []
-            i = start
-            n = len(shape)
-            while True:
-                out.append(shape[i])
-                if i == end:
-                    break
-                i = (i + 1) % n
-            return out
-
-        min_idx, max_idx = calculate_min_max(SHAPE)
-
-        # fallback dacă nu putem determina capetele
+        min_idx, max_idx = self._calculate_min_max(shape, real_pos)
         if min_idx < 0 or max_idx < 0:
-            return self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+            return self.generate_path(PRIMARY_COLOR, 'none', shape)
+        if min_idx == max_idx and len(shape) > 1:
+            # choose the farthest other point as second extreme
+            dists = [(math.hypot(pt['x'] - real_pos['x'], pt['y'] - real_pos['y']), i) for i, pt in enumerate(shape)]
+            max_idx = max([d for d in dists if d[1] != min_idx], key=lambda x: x[0])[1]
 
-        # dacă min și max coincid (formă degenerată sau unghiuri identice), alegem un al doilea capăt după distanță față de real_pos
-        if min_idx == max_idx:
-            dists = [
-                (math.hypot(pt['x'] - real_pos['x'], pt['y'] - real_pos['y']), i)
-                for i, pt in enumerate(SHAPE)
-            ]
-            # îl păstrăm pe min_idx, iar capătul celălalt devine cel mai îndepărtat punct diferit
-            far_idx = max([di for di in dists if di[1] != min_idx], key=lambda x: x[0])[1]
-            max_idx = far_idx
-
-        # lanțuri
-        bright_side = slice_shape(SHAPE, min_idx, max_idx)
-        dark_side = slice_shape(SHAPE, max_idx, min_idx)
-
-        # dacă lanțurile ies goale (nu ar trebui), fallback
+        bright_side = self._slice_shape(shape, min_idx, max_idx)
+        dark_side = self._slice_shape(shape, max_idx, min_idx)
         if not bright_side or not dark_side:
-            return self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+            return self.generate_path(PRIMARY_COLOR, 'none', shape)
 
-        # lungimea umbrei (folosește elevația, limitată pentru stabilitate)
         shadow_length = min(WIDTH * 2, WIDTH / max(0.001, math.tan(math.radians(elev))))
+        min_proj = self._project_point(shape[min_idx], shadow_length, az)
+        max_proj = self._project_point(shape[max_idx], shadow_length, az)
 
-        # vector unghi opus față de azimut (ca în codul tău: -azimuth + 270)
-        opp_deg = -az + 270.0
-        vx = math.cos(math.radians(opp_deg))
-        vy = math.sin(math.radians(opp_deg))
-
-        # capete proiectate din min/max puncte
-        min_proj = {
-            'x': SHAPE[min_idx]['x'] + shadow_length * vx,
-            'y': SHAPE[min_idx]['y'] - shadow_length * vy
-        }
-        max_proj = {
-            'x': SHAPE[max_idx]['x'] + shadow_length * vx,
-            'y': SHAPE[max_idx]['y'] - shadow_length * vy
-        }
-
-        # umbra = capăt proiectat + lanț umbrit + celălalt capăt proiectat
         shadow = [max_proj] + dark_side + [min_proj]
         shadow_svg = self.generate_path('none', 'black', shadow, 'mask="url(#shadowMask)" fill-opacity="0.5"')
-
-        # pereții + partea luminată
-        shape_svg = self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+        shape_svg = self.generate_path(PRIMARY_COLOR, 'none', shape)
         light_svg = self.generate_path(LIGHT_COLOR, 'none', bright_side)
 
         return shape_svg + light_svg + shadow_svg
@@ -343,13 +315,13 @@ class Shadow:
 
         phase = moon.phase(self.now)
 
-        # valori implicite
+        # implicit values for full moon
         left_radius = MOON_RADIUS
         left_sweep = 0
         right_radius = MOON_RADIUS
         right_sweep = 0
 
-        # faza lunii > 14 (după lună plină)
+        # moon phase > 14 (after fool moon)
         if phase > 14:
             right_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
             if right_radius < 0:
@@ -358,14 +330,14 @@ class Shadow:
             else:
                 right_sweep = 1
 
-        # faza lunii < 14 (înainte de lună plină)
+        # moon phase < 14 (before full moon)
         if phase < 14:
             left_radius = MOON_RADIUS - (2.0 * MOON_RADIUS * (1.0 - ((phase % 14) * 0.99 / 14.0)))
             if left_radius < 0:
                 left_radius = -left_radius
                 left_sweep = 1
 
-        # path SVG pentru disc lunar cu fază
+        # path SVG for lunar disc with phase
         return (
             f'<path stroke="none" fill="{MOON_COLOR}" '
             f'd="M {moon_pos["x"]} {moon_pos["y"] - MOON_RADIUS} '
@@ -377,25 +349,14 @@ class Shadow:
         ts = self.now.strftime("%Y-%m-%d %H:%M:%S")
         return f'<text x="{WIDTH+5}" y="{HEIGHT+10}" font-size="3" text-anchor="end" fill="yellow">{ts}</text>'
 
-    # def _svg_sun_ray(self, sun_pos):
-    #     # linie din centrul shape-ului spre direcția soarelui
-    #     cx, cy = WIDTH / 2, HEIGHT / 2
-    #     sdx, sdy = self.azimuth_to_unit_vector(self.sun_azimuth)
-    #     ray = [
-    #         {'x': cx, 'y': cy},
-    #         {'x': cx + 100 * sdx, 'y': cy + 100 * sdy}
-    #     ]
-    #     return self.generate_path('yellow', 'none', ray, 'stroke-dasharray="2,2"')
-
 
     def _build_svg(self) -> str:
         sun_pos = self.azimuth_to_point(self.sun_azimuth, WIDTH/2)
         moon_pos = self.azimuth_to_point(self.moon_azimuth, WIDTH/2)
-
         svg = self._svg_header()
         svg += self._svg_shadow_mask()
         svg += self._svg_outline()
-        svg += self._svg_shadow(sun_pos, moon_pos)
+        svg += self._svg_shadow(SHAPE, sun_pos, moon_pos)
         svg += self._svg_day_night_arcs()
         svg += self._svg_sunrise_sunset_ticks()
         svg += self._svg_hour_arcs()
@@ -403,7 +364,6 @@ class Shadow:
         svg += self._svg_sun_marker(sun_pos)
         svg += self._svg_moon_marker(moon_pos)
         svg += self._svg_timestamp()
-        # svg += self._svg_sun_ray(sun_pos)
         svg += '</svg>'
         return svg
 
@@ -415,10 +375,10 @@ class Shadow:
             f.write(svg_content)
 
     async def async_generate_svg(self, hass):
-        # Recalculează înainte de generare
+        # Recalculate before generation
         self.refresh()
         svg_content = self._build_svg()
-        # Scriere non-blocking prin executorul Home Assistant
+        # Write non-blocking via Home Assistant executor
         await hass.async_add_executor_job(self._write_svg, svg_content)
 
     def generate_svg(self, hass):
