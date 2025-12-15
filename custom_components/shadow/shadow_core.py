@@ -193,65 +193,100 @@ class Shadow:
         if not (use_sun or use_moon):
             return self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
 
+        # selectăm sursa de lumină
         elev = self.sun_elevation if use_sun else self.moon_elevation
         az = self.sun_azimuth if use_sun else self.moon_azimuth
-        light_pos = sun_pos if use_sun else moon_pos
-        sdx, sdy = self.azimuth_to_unit_vector(az)
+        base_pos = sun_pos if use_sun else moon_pos
 
-        # Centroid
-        cx = sum(p['x'] for p in SHAPE) / len(SHAPE)
-        cy = sum(p['y'] for p in SHAPE) / len(SHAPE)
+        # centru
+        cx, cy = WIDTH / 2.0, HEIGHT / 2.0
 
-        # Unghiuri față de lumină
-        angles = []
-        for i, pt in enumerate(SHAPE):
-            dx = pt['x'] - light_pos['x']
-            dy = pt['y'] - light_pos['y']
-            ang = math.degrees(math.atan2(-dy, dx)) % 360  # y inversat
-            angles.append((ang, i))
+        # construim un "real_pos" îndepărtat pe aceeași direcție ca base_pos (evită erori la atan2 cu sursă prea aproape)
+        ux = base_pos['x'] - cx
+        uy = base_pos['y'] - cy
+        norm = math.hypot(ux, uy) or 1.0
+        real_pos = {
+            'x': cx + (ux / norm) * 10000.0,
+            'y': cy + (uy / norm) * 10000.0
+        }
 
-        # Puncte extreme
-        min_angle, min_idx = min(angles)
-        max_angle, max_idx = max(angles)
+        # helper: min/max pe baza unghiului către sursa de lumină îndepărtată (stabil ca în codul tău original)
+        def calculate_min_max(shape):
+            min_point = -1
+            max_point = -1
+            min_angle = 999.0
+            max_angle = -999.0
+            for i, pt in enumerate(shape):
+                angle = -math.degrees(math.atan2(pt['y'] - real_pos['y'], pt['x'] - real_pos['x']))
+                if angle < min_angle:
+                    min_angle = angle
+                    min_point = i
+                if angle > max_angle:
+                    max_angle = angle
+                    max_point = i
+            return min_point, max_point
 
-        # Lanț iluminat: de la min_idx la max_idx
-        side1 = []
-        i = min_idx
-        while True:
-            side1.append(SHAPE[i])
-            if i == max_idx:
-                break
-            i = (i + 1) % len(SHAPE)
+        # helper: decupare circulară între doi indici
+        def slice_shape(shape, start, end):
+            out = []
+            i = start
+            n = len(shape)
+            while True:
+                out.append(shape[i])
+                if i == end:
+                    break
+                i = (i + 1) % n
+            return out
 
-        # Lanț umbrit: restul
-        side2 = []
-        i = max_idx
-        while True:
-            side2.append(SHAPE[i])
-            if i == min_idx:
-                break
-            i = (i + 1) % len(SHAPE)
+        min_idx, max_idx = calculate_min_max(SHAPE)
 
-        # Lungimea umbrei
+        # fallback dacă nu putem determina capetele
+        if min_idx < 0 or max_idx < 0:
+            return self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+
+        # dacă min și max coincid (formă degenerată sau unghiuri identice), alegem un al doilea capăt după distanță față de real_pos
+        if min_idx == max_idx:
+            dists = [
+                (math.hypot(pt['x'] - real_pos['x'], pt['y'] - real_pos['y']), i)
+                for i, pt in enumerate(SHAPE)
+            ]
+            # îl păstrăm pe min_idx, iar capătul celălalt devine cel mai îndepărtat punct diferit
+            far_idx = max([di for di in dists if di[1] != min_idx], key=lambda x: x[0])[1]
+            max_idx = far_idx
+
+        # lanțuri
+        bright_side = slice_shape(SHAPE, min_idx, max_idx)
+        dark_side = slice_shape(SHAPE, max_idx, min_idx)
+
+        # dacă lanțurile ies goale (nu ar trebui), fallback
+        if not bright_side or not dark_side:
+            return self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
+
+        # lungimea umbrei (folosește elevația, limitată pentru stabilitate)
         shadow_length = min(WIDTH * 2, WIDTH / max(0.001, math.tan(math.radians(elev))))
 
-        # Proiecție pe capete
+        # vector unghi opus față de azimut (ca în codul tău: -azimuth + 270)
+        opp_deg = -az + 270.0
+        vx = math.cos(math.radians(opp_deg))
+        vy = math.sin(math.radians(opp_deg))
+
+        # capete proiectate din min/max puncte
         min_proj = {
-            'x': SHAPE[min_idx]['x'] - shadow_length * sdx,
-            'y': SHAPE[min_idx]['y'] - shadow_length * sdy
+            'x': SHAPE[min_idx]['x'] + shadow_length * vx,
+            'y': SHAPE[min_idx]['y'] - shadow_length * vy
         }
         max_proj = {
-            'x': SHAPE[max_idx]['x'] - shadow_length * sdx,
-            'y': SHAPE[max_idx]['y'] - shadow_length * sdy
+            'x': SHAPE[max_idx]['x'] + shadow_length * vx,
+            'y': SHAPE[max_idx]['y'] - shadow_length * vy
         }
 
-        # Umbra = capăt proiectat + side2 + celălalt capăt proiectat
-        shadow = [max_proj] + side2 + [min_proj]
-        shadow_svg = self.generate_path('none', 'black', shadow,
-                                        'mask="url(#shadowMask)" fill-opacity="0.5"')
+        # umbra = capăt proiectat + lanț umbrit + celălalt capăt proiectat
+        shadow = [max_proj] + dark_side + [min_proj]
+        shadow_svg = self.generate_path('none', 'black', shadow, 'mask="url(#shadowMask)" fill-opacity="0.5"')
 
+        # pereții + partea luminată
         shape_svg = self.generate_path(PRIMARY_COLOR, 'none', SHAPE)
-        light_svg = self.generate_path(LIGHT_COLOR, 'none', side1)
+        light_svg = self.generate_path(LIGHT_COLOR, 'none', bright_side)
 
         return shape_svg + light_svg + shadow_svg
 
@@ -351,6 +386,7 @@ class Shadow:
     #         {'x': cx + 100 * sdx, 'y': cy + 100 * sdy}
     #     ]
     #     return self.generate_path('yellow', 'none', ray, 'stroke-dasharray="2,2"')
+
 
     def _build_svg(self) -> str:
         sun_pos = self.azimuth_to_point(self.sun_azimuth, WIDTH/2)
