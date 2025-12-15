@@ -35,7 +35,7 @@ image: /local/shadow.svg
 3. Enter the repository URL: https://github.com/clmun/Shadow
 4. Select "Integration" as the category and click "Add".
 5. Restart Home Assistant.
-### Add the Shadow integration manual: ###
+### Add the Shadow integration manually: ###
 1. Download the component from the GitHub repository: https://github.com/clmun/Shadow
 2. Extract the downloaded files.
 3. Create a directory named `shadow` in your Home Assistant `custom_components` folder if it doesn't already exist.
@@ -74,8 +74,8 @@ SHAPE = [
     {'x': 40, 'y': 60}  # Top-left corner
 ]
 ```
-4. After configuring shadow_config.py file restart Home Assistant.
-5. The SVG file will be generated at the specified output path. /config/www/shadow.svg
+4. After configuring the `shadow_config.py` file, restart Home Assistant.
+5. The SVG file will be generated at the specified output path: `/config/www/shadow.svg`.
 6. Access the SVG file via Home Assistant's web server at `http://<your-home-assistant-url>/local/shadow.svg`.
 7. You can then use this SVG in your Lovelace dashboard or other places within Home Assistant.
 8. Somehow the picture is not updating in the picture card. A solution is to add it as a camera entity using the local file camera integration: 
@@ -126,11 +126,11 @@ By using this integration, you agree to the terms of this disclaimer.
 
 
 ## Inspiration
-This integration was inspired from OpenHAB community and adapted for Home Assistant.
+This integration was inspired by the OpenHAB community and adapted for Home Assistant.
 
 When I started with home automation, 10 years ago, I've started with OpenHAB and found this script and this idea fascinating.
 
-Later, when I moved to Home Assistant, I kept the script and had the shadow running for all this time, but always waited for somebody more experimented to bring this to Home Assistant.
+Later, when I moved to Home Assistant, I kept the script and had the shadow running for all this time, but always waited for somebody more experienced to bring this to Home Assistant.
 
 Well, in the end, with a big help from AI, I did it myself and share it now with the community.
 
@@ -153,4 +153,4 @@ It costs nothing, and your contribution helps the future development of the proj
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20the%20developer-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/clmun01c)
 
-Thanks for support and I appreciate any support gesture! 🤗
+Thanks for the support, I appreciate any gesture of support! 🤗
