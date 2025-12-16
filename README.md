@@ -1,6 +1,6 @@
 # Shadow SVG Generator - Show Sun or Moon Position and Shadow of House
 ---
-![Shadow Logo] (https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Shadow_Logo_256x256.png)
+![Shadow Logo] (https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Shadow_logo_256x256.png)
 ## 🌞🌙 Shadow SVG Generator for Home Assistant
 
 A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.  
