@@ -1,5 +1,6 @@
 from datetime import datetime
-from shadow_core import Shadow, ShadowConfig  # presupunând că fișierul tău se numește shadow_core.py
+from custom_components.shadow.shadow_core import Shadow, ShadowConfig  # presupunând că fișierul tău se numește shadow_core.py
+import zoneinfo
 
 def main():
     # Config pentru locația ta (ex. Sibiu, România)
@@ -16,6 +17,10 @@ def main():
     shadow = Shadow(conf)
 
     # Construiește SVG
+
+    tz = zoneinfo.ZoneInfo("Europe/Bucharest")
+    #shadow.refresh(datetime(2025, 12, 11, 9, 0, tzinfo=tz))
+
     svg_content = shadow._build_svg()
 
     # Scrie fișierul

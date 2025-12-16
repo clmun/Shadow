@@ -1,7 +1,7 @@
 {
   "domain": "shadow",
   "name": "Shadow",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "documentation": "https://github.com/clmun/Shadow",
   "requirements": [
     "astral==2.2",

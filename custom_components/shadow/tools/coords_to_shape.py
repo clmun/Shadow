@@ -1,44 +1,94 @@
 import math
 
-# The dimensions of the shape SVG must match those in shadow_config.py
-WIDTH = 100
-HEIGHT = 100
-
-def normalize_coords(coords, width=WIDTH, height=HEIGHT, eps=1e-9):
-    """
-    Transform a list of geographic coordinates (lat, lon)
-    into a list of points (x, y) for SVG.
-    """
-    lats = [lat for lat, lon in coords]
-    lons = [lon for lat, lon in coords]
-
-    min_lat, max_lat = min(lats), max(lats)
-    min_lon, max_lon = min(lons), max(lons)
-
-    lat_range = max_lat - min_lat
-    lon_range = max_lon - min_lon
-
-    points = []
-    for lat, lon in coords:
-        # Normalize based on longitude for x and latitude for y
-        x = (lon - min_lon) / lon_range * width
-        y = (lat - min_lat) / lat_range * height
-        # Invert Y to match SVG coordinates (0 at the top)
-        y = height - y
-        points.append({"x": round(x, 2), "y": round(y, 2)})
-    return points
+# --- Here you have to put your coordinates (lat, lon)---
+coords = [
+    (45.75672246183737, 24.14507467947945),
+    (45.75633213234665, 24.145332882810937),
+    (45.756201858743545, 24.144919772449043),
+    (45.756314563258954, 24.14483900499283),
+    (45.75638919203197, 24.145094404451115),
+    (45.75666943039342, 24.144902308510726)
+]
 
 
-if __name__ == "__main__":
-    # Example: lat/lon coordinates for a shape
-    coords = [
-        (5.756524342539315, 4.147497678530097),   # point 1
-        (5.75655147794478, 4.14758149755787),     # point 2
-        (5.75653884598887, 4.14759155586402),     # point 3
-        (5.75655662432034, 4.147641847306073),    # point 4
-        (5.75646632918013, 4.147709573050665),    # point 5
-        (5.7564195441265, 4.14757881552004)       # point 6
+def normalize_points(coords, width=100, height=100, rotate=True, angle_deg=0, margin=5):
+    lat0 = sum(lat for lat, lon in coords) / len(coords)
+    lon0 = sum(lon for lat, lon in coords) / len(coords)
+
+    def to_xy(lat, lon):
+        dx = (lon - lon0) * 111320 * math.cos(math.radians(lat0))
+        dy = -(lat - lat0) * 110540   # flip pe Y
+        return dx, dy
+
+    points = [to_xy(lat, lon) for lat, lon in coords]
+
+    if rotate:
+        angle = math.radians(angle_deg)
+        rotated = []
+        for x, y in points:
+            xr = x * math.cos(angle) - y * math.sin(angle)
+            yr = x * math.sin(angle) + y * math.cos(angle)
+            rotated.append((xr, yr))
+        points = rotated
+
+    xs, ys = zip(*points)
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+
+    # scalare best fit în cerc
+    radius = width/2 - margin
+    diag = math.sqrt((max_x - min_x)**2 + (max_y - min_y)**2)
+    scale = (radius * math.sqrt(2)) / diag
+
+    # scalare + centrare
+    norm_points = [
+        {
+            'x': (x - (min_x + max_x)/2) * scale + width/2,
+            'y': (y - (min_y + max_y)/2) * scale + height/2
+        }
+        for x, y in points
     ]
 
-    shape = normalize_coords(coords)
-    print("SHAPE = ", shape)
+    return norm_points
+
+def main():
+    shape = normalize_points(coords, width=100, height=100, rotate=True, angle_deg=0)
+
+    # --- Write shape.svg ---
+    with open("shape.svg", "w") as f:
+        f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        f.write('<svg xmlns="http://www.w3.org/2000/svg" '
+                'width="100" height="100" viewBox="0 0 100 100">\n')
+
+        # cerc de fundal
+        f.write('<circle cx="50" cy="50" r="45" fill="none" stroke="black" stroke-width="1"/>\n')
+
+        # trasează poligonul din punctele normalizate, umplut cu verde
+        path = "M " + " ".join(f"{p['x']:.2f},{p['y']:.2f}" for p in shape) + " Z"
+        f.write(f'<path d="{path}" fill="#26bf75" stroke="black" stroke-width="1"/>\n')
+
+        f.write('</svg>\n')
+
+
+    # --- Write shadow_config.py ---
+    with open("shadow_config.py", "w") as f:
+        f.write("WIDTH = 100\n")
+        f.write("HEIGHT = 100\n\n")
+        f.write("PRIMARY_COLOR = 'red'        #'#1b3024'\n")
+        f.write("LIGHT_COLOR = '#26bf75'\n")
+        f.write("BG_COLOR = '#1a1919'\n")
+        f.write("SUN_COLOR = '#ffff66'\n")
+        f.write("MOON_COLOR = '#999999'\n\n")
+        f.write("SUN_RADIUS = 5\n")
+        f.write("MOON_RADIUS = 3\n\n")
+        f.write("# Shape of the house (original)\n")
+        f.write("SHAPE = [\n")
+        for p in shape:
+            f.write(f"    {{'x': {p['x']:.2f}, 'y': {p['y']:.2f}}},\n")
+        f.write("]\n")
+
+    print("Image shape.svg created in current folder. Check it.")
+    print("File shadow_config.py was generated in current folder. You have to copy it to custom_components/shadow/ folder.")
+
+if __name__ == "__main__":
+    main()

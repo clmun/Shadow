@@ -7,7 +7,7 @@
 A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.  
 The SVG image illustrates where the Sun is currently positioned and which side of the house is facing the Sun.  
 The integration automatically uses data from Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`).
-
+![Legend](https://raw.githubusercontent.com/clmun/Shadow/main/images/Legend.png)
 ---
 ## 🌟 Features
 - House shadow representation based on real-time Sun or Moon position.
@@ -97,7 +97,7 @@ or you can do this via UI.
 9. Enjoy your dynamic shadow SVG graphics!
 ---
 ## ⚙️ How to generate the points for shape
-To define the shape of your house or object in the SVG, you need to specify the coordinates of its corners in the `SHAPE` list within the `shadow_config.py` file. Each corner is represented as a dictionary with `x` and `y` keys.
+To define the shape of your house in the SVG, you need to specify the coordinates of its corners in the `SHAPE` list within the `shadow_config.py` file. Each corner is represented as a dictionary with `x` and `y` keys.
 Here's how to generate the points for your shape:
 1. **Determine the Shape**: Decide on the shape you want to represent (e.g., rectangle, polygon).
 2. **Coordinate System**: The SVG coordinate system starts in the top-left corner (0,0). The `x` coordinate increases to the right, and the `y` coordinate increases downward.
@@ -112,8 +112,9 @@ Here's how to generate the points for your shape:
    - **Google Maps Method**:
      1. Open Google Maps and locate your house.
      2. Use the "Measure distance" tool to find the coordinates of each corner of your house. (right-click on the map to access it)
-     3. Copy the latitude and longitude coordinates for each corner and put them into the script from tools/shape_generator.py to generate the SHAPE list.
-     4. Scale the coordinates if necessary to fit within the SVG dimensions. (SVG size is 100x100 by default, so you might need to scale down your measurements accordingly.)
+     3. Copy the latitude and longitude coordinates for each corner and put them into the script from tools/coords_to_shape.py
+     4. Run the script and it will generate the shadow_config.py file with the SHAPE variable filled in. It will also generate a shadow.svg file that you can use to see how it looks.
+     5. Shadow_config.py will be generated in the same folder where you run the script. You have to copy it to the custom_components/shadow folder.
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
