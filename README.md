@@ -7,7 +7,7 @@
 A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.  
 The SVG image illustrates where the Sun is currently positioned and which side of the house is facing the Sun.  
 The integration automatically uses data from Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`).
-![Legend](https://raw.githubusercontent.com/clmun/Shadow/main/images/Legend.png)
+![Legend](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Legend.png)
 ---
 ## 🌟 Features
 - House shadow representation based on real-time Sun or Moon position.
