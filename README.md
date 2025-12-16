@@ -112,7 +112,7 @@ Here's how to generate the points for your shape:
      1. Open Google Maps and locate your house.
      2. Use the "Measure distance" tool to find the coordinates of each corner of your house. (right-click on the map to access it)
      3. Copy the latitude and longitude coordinates for each corner and put them into the script from tools/coords_to_shape.py
-     4. Run the script and this will generate the shadow_config.py file with the SHAPE variable filled in. Also will generate a shadow.svg file that you can use to see how it looks like.
+     4. Run the script and it will generate the shadow_config.py file with the SHAPE variable filled in. It will also generate a shadow.svg file that you can use to see how it looks.
      5. Shadow_config.py will be generated in the same folder where you run the script. You have to copy it to the custom_components/shadow folder.
 ## 📄 License
 
