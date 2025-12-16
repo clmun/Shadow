@@ -1,12 +1,12 @@
 # Shadow SVG Generator - Show Sun or Moon Position and Shadow of House
-![Example Day](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Example_day.png)
-
 ---
 
-## 📄 Shadow SVG Generator
+## 🌞🌙 Shadow SVG Generator for Home Assistant
+
 A Home Assistant custom component (via HACS) that generates dynamic SVG graphics showing illuminated sides and realistic shadows based on the Sun or Moon position.  
 The SVG image illustrates where the Sun is currently positioned and which side of the house is facing the Sun.  
 The integration automatically uses data from Home Assistant (`latitude`, `longitude`, `elevation`, `time_zone`).
+
 ![Legend](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Legend.png)
 ---
 ## 🌟 Features
@@ -115,9 +115,6 @@ Here's how to generate the points for your shape:
      3. Copy the latitude and longitude coordinates for each corner and put them into the script from tools/coords_to_shape.py
      4. Run the script and it will generate the shadow_config.py file with the SHAPE variable filled in. It will also generate a shadow.svg file that you can use to see how it looks.
      5. Shadow_config.py will be generated in the same folder where you run the script. You have to copy it to the custom_components/shadow folder.
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
 ## 📝 Disclaimer
