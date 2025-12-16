@@ -51,40 +51,44 @@ def normalize_points(coords, width=100, height=100, rotate=True, angle_deg=0, ma
 
     return norm_points
 
-shape = normalize_points(coords, width=100, height=100, rotate=True, angle_deg=0)
+def main():
+    shape = normalize_points(coords, width=100, height=100, rotate=True, angle_deg=0)
 
-# --- Write shape.svg ---
-with open("shape.svg", "w") as f:
-    f.write('<?xml version="1.0" encoding="utf-8"?>\n')
-    f.write('<svg xmlns="http://www.w3.org/2000/svg" '
-            'width="100" height="100" viewBox="0 0 100 100">\n')
+    # --- Write shape.svg ---
+    with open("shape.svg", "w") as f:
+        f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        f.write('<svg xmlns="http://www.w3.org/2000/svg" '
+                'width="100" height="100" viewBox="0 0 100 100">\n')
 
-    # cerc de fundal
-    f.write('<circle cx="50" cy="50" r="45" fill="none" stroke="black" stroke-width="1"/>\n')
+        # cerc de fundal
+        f.write('<circle cx="50" cy="50" r="45" fill="none" stroke="black" stroke-width="1"/>\n')
 
-    # trasează poligonul din punctele normalizate, umplut cu verde
-    path = "M " + " ".join(f"{p['x']:.2f},{p['y']:.2f}" for p in shape) + " Z"
-    f.write(f'<path d="{path}" fill="#26bf75" stroke="black" stroke-width="1"/>\n')
+        # trasează poligonul din punctele normalizate, umplut cu verde
+        path = "M " + " ".join(f"{p['x']:.2f},{p['y']:.2f}" for p in shape) + " Z"
+        f.write(f'<path d="{path}" fill="#26bf75" stroke="black" stroke-width="1"/>\n')
 
-    f.write('</svg>\n')
+        f.write('</svg>\n')
 
 
-# --- Write shadow_config.py ---
-with open("shadow_config.py", "w") as f:
-    f.write("WIDTH = 100\n")
-    f.write("HEIGHT = 100\n\n")
-    f.write("PRIMARY_COLOR = 'red'        #'#1b3024'\n")
-    f.write("LIGHT_COLOR = '#26bf75'\n")
-    f.write("BG_COLOR = '#1a1919'\n")
-    f.write("SUN_COLOR = '#ffff66'\n")
-    f.write("MOON_COLOR = '#999999'\n\n")
-    f.write("SUN_RADIUS = 5\n")
-    f.write("MOON_RADIUS = 3\n\n")
-    f.write("# Shape of the house (original)\n")
-    f.write("SHAPE = [\n")
-    for p in shape:
-        f.write(f"    {{'x': {p['x']:.2f}, 'y': {p['y']:.2f}}},\n")
-    f.write("]\n")
+    # --- Write shadow_config.py ---
+    with open("shadow_config.py", "w") as f:
+        f.write("WIDTH = 100\n")
+        f.write("HEIGHT = 100\n\n")
+        f.write("PRIMARY_COLOR = 'red'        #'#1b3024'\n")
+        f.write("LIGHT_COLOR = '#26bf75'\n")
+        f.write("BG_COLOR = '#1a1919'\n")
+        f.write("SUN_COLOR = '#ffff66'\n")
+        f.write("MOON_COLOR = '#999999'\n\n")
+        f.write("SUN_RADIUS = 5\n")
+        f.write("MOON_RADIUS = 3\n\n")
+        f.write("# Shape of the house (original)\n")
+        f.write("SHAPE = [\n")
+        for p in shape:
+            f.write(f"    {{'x': {p['x']:.2f}, 'y': {p['y']:.2f}}},\n")
+        f.write("]\n")
 
-print("Image shape.svg created in current folder. Check it.")
-print("File shadow_config.py was generated in current folder. You have to copy it to custom_components/shadow/ folder.")
+    print("Image shape.svg created in current folder. Check it.")
+    print("File shadow_config.py was generated in current folder. You have to copy it to custom_components/shadow/ folder.")
+
+if __name__ == "__main__":
+    main()
