@@ -12,8 +12,9 @@ The integration automatically uses data from Home Assistant (`latitude`, `longit
 ## 🌟 Features
 - House shadow representation based on real-time Sun or Moon position.
 - Positioning based on user-defined location (town).
-- Customizable colors, dimensions, and shapes via `shadow_config.py`.
 - Easy integration with Home Assistant via HACS or manual installation.
+- Customizable colors, dimensions, and shapes via `shadow_config.py`.
+- Shadow_config.py is generated automatically via tools/coords_to_shape.py script from Google Maps coordinates or can be created manually.
 - Configurable update intervals for real-time shadow representation.
 - Output SVG file accessible via Home Assistant's web server.
 - Lightweight and efficient, suitable for various Home Assistant setups.
@@ -22,8 +23,7 @@ The integration automatically uses data from Home Assistant (`latitude`, `longit
 You can display the generated SVG in your Lovelace dashboard using the Picture Entity card or Picture card.
 ```yaml
 type: picture-entity
-entity: sensor.shadow_elevation
-image: /local/shadow.svg
+entity: camera.shadow_camera
 ```
 
 ![Lovelace Example](https://raw.githubusercontent.com/clmun/Shadow/master/custom_components/shadow/images/Example_day.png)
@@ -51,11 +51,11 @@ image: /local/shadow.svg
 sensor:
   - platform: shadow
     name: Shadow Elevation
-    town: Sibiu
+    town: [Your Town Name]
     output_path: /config/www/shadow.svg
     update_interval: 60
 ```
-3. All settings needed for generating the picture (.svg format) are stored in `shadow_config.py` (colors, dimensions, shape coordinates).
+3. All settings needed for generating the picture (.svg format) are stored in `shadow_config.py` (colors, dimensions, shape coordinates). This file can be generated automatically via the `tools/coords_to_shape.py` script (see below: **How to generate the points for shape**) or can be created manually.
 Minimal example configuration:
  ```python
 WIDTH = 100
@@ -79,7 +79,7 @@ SHAPE = [
 5. The SVG file will be generated at the specified output path: `/config/www/shadow.svg`.
 6. Access the SVG file via Home Assistant's web server at `http://<your-home-assistant-url>/local/shadow.svg`.
 7. You can then use this SVG in your Lovelace dashboard or other places within Home Assistant.
-8. Somehow the picture is not updating in the picture card. A solution is to add it as a camera entity using the local file camera integration: 
+8. Somehow the picture is not updating in the picture card. A solution is to add it as a camera entity using the **local file** integration: 
 ```yaml
 camera:
   - platform: local_file
@@ -92,31 +92,35 @@ Then use the camera entity in the picture card:
 type: picture-entity
 entity: camera.shadow_camera
 ```
-or you can do this via UI.
-  
 9. Enjoy your dynamic shadow SVG graphics!
 ---
 ## ⚙️ How to generate the points for shape
-To define the shape of your house in the SVG, you need to specify the coordinates of its corners in the `SHAPE` list within the `shadow_config.py` file. Each corner is represented as a dictionary with `x` and `y` keys.
-Here's how to generate the points for your shape:
-1. **Determine the Shape**: Decide on the shape you want to represent (e.g., rectangle, polygon).
-2. **Coordinate System**: The SVG coordinate system starts in the top-left corner (0,0). The `x` coordinate increases to the right, and the `y` coordinate increases downward.
-3. **Calculate Points**: For each corner of your shape, calculate its `x` and `y` coordinates based on the desired dimensions and position within the SVG canvas.
-4. **Create Point Dictionaries**: For each corner, create a dictionary with the calculated `x` and `y` values.
-5. **Use the Following Methods to Get Coordinates**:
-   - **Graph Paper Method**:
-     1. Print a piece of graph paper.
-     2. Draw the shape of your house on the graph paper.
-     3. Count the squares to determine the `x` and `y` coordinates of each corner.
-     4. Scale the coordinates if necessary to fit within the SVG dimensions. (SVG size is 100x100 by default, so you might need to scale down your measurements accordingly.)
-   - **Google Maps Method**:
-     1. Open Google Maps and locate your house.
-     2. Use the "Measure distance" tool to find the coordinates of each corner of your house. (right-click on the map to access it)
-     3. Copy the latitude and longitude coordinates for each corner and put them into the script from tools/coords_to_shape.py
-     4. Run the script and it will generate the shadow_config.py file with the SHAPE variable filled in. It will also generate a shadow.svg file that you can use to see how it looks.
-     5. Shadow_config.py will be generated in the same folder where you run the script. You have to copy it to the custom_components/shadow folder.
 
+Define your house shape by listing its corner points in the SHAPE variable in shadow_config.py. Each point is a dictionary with x and y.
+* SVG origin is top-left (0,0)
+* x increases right, y increases down
+* SVG size is 100 × 100
 
+How to get coordinates:
+
+**Option 1: Graph paper**
+* Draw the shape.
+* Count squares for each corner.
+* Scale to fit 100 × 100.
+
+**Option 2: Google Maps (recommended)**
+
+* Measure each corner using Measure distance.
+* Copy the lat/long points into tools/coords_to_shape.py.
+* Run the script.
+  This generates:
+* shadow_config.py (with SHAPE filled in)
+* shadow.svg for preview
+* Copy shadow_config.py to:
+
+```yaml
+custom_components/shadow/
+```
 ## 📝 Disclaimer
 
 This integration is provided "as is" without warranty of any kind. Use at your own risk
