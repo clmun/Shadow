@@ -81,13 +81,8 @@ SHAPE = [
 6. Access the SVG file via Home Assistant's web server at `http://<your-home-assistant-url>/local/shadow.svg`.
 7. You can then use this SVG in your Lovelace dashboard or other places within Home Assistant.
 8. Somehow the picture is not updating in the picture card. A solution is to add it as a camera entity using the **local file** integration: 
-```yaml
-camera:
-  - platform: local_file
-    name: Shadow Camera
-    file_path: /config/www/shadow.svg
-    content_type: image/svg+xml
-```
+      >> Go to Settings >> Devices & Services >> Add Integration >> Local File
+      >> And here add a name for the file + path (/config/www/shadow.svg) >> And you will have the camera.
 Then use the camera entity in the picture card:
 ```yaml
 type: picture-entity
