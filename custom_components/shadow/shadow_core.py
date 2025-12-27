@@ -46,6 +46,16 @@ class Shadow:
         self.sun_azimuth = sun.azimuth(self._observer, self.now)
         self.sun_elevation = sun.elevation(self._observer, self.now)
 
+
+        # --- Southern Hemisphere normalization ---
+        # Astral returns correct azimuths, but the rendering logic assumes a Northern Hemisphere sun path (noon ≈ 180°). In the Southern
+        # Hemisphere noon is ≈ 0°, so we rotate the frame by 180°.
+
+        if self.conf.latitude < 0:
+          self.sunrise_azimuth = (self.sunrise_azimuth + 180) % 360
+          self.sunset_azimuth = (self.sunset_azimuth + 180) % 360
+          self.sun_azimuth = (self.sun_azimuth + 180) % 360
+
         # Solar azimuths for each hour (local time)
         self.degs = []
         local_date = self.now.date()
@@ -74,6 +84,15 @@ class Shadow:
         self.sunset_azimuth = sun.azimuth(self._observer, self.sun_data['sunset'])
         self.sun_azimuth = sun.azimuth(self._observer, self.now)
         self.sun_elevation = sun.elevation(self._observer, self.now)
+
+        # --- Southern Hemisphere normalization ---
+        # Astral returns correct azimuths, but the rendering logic assumes a Northern Hemisphere sun path (noon ≈ 180°). In the Southern
+        # Hemisphere noon is ≈ 0°, so we rotate the frame by 180°.
+
+        if self.conf.latitude < 0:
+            self.sunrise_azimuth = (self.sunrise_azimuth + 180) % 360
+            self.sunset_azimuth = (self.sunset_azimuth + 180) % 360
+            self.sun_azimuth = (self.sun_azimuth + 180) % 360
 
         self.degs = []
         local_date = self.now.date()
