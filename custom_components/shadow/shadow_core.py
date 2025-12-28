@@ -46,6 +46,13 @@ class Shadow:
         self.sun_azimuth = sun.azimuth(self._observer, self.now)
         self.sun_elevation = sun.elevation(self._observer, self.now)
 
+        # Solar azimuths for each hour (local time)
+        self.degs = []
+        local_date = self.now.date()
+        for i in range(0, 24, HOURS):
+            hour_time = datetime(local_date.year, local_date.month, local_date.day, i, 0, 0, tzinfo=self.timezone)
+            a = sun.azimuth(self._observer, hour_time)
+            self.degs.append(float(a) if a is not None else 0)
 
         # --- Southern Hemisphere normalization ---
         # Astral returns correct azimuths, but the rendering logic assumes a Northern Hemisphere sun path (noon ≈ 180°). In the Southern
@@ -55,14 +62,7 @@ class Shadow:
           self.sunrise_azimuth = (self.sunrise_azimuth + 180) % 360
           self.sunset_azimuth = (self.sunset_azimuth + 180) % 360
           self.sun_azimuth = (self.sun_azimuth + 180) % 360
-
-        # Solar azimuths for each hour (local time)
-        self.degs = []
-        local_date = self.now.date()
-        for i in range(0, 24, HOURS):
-            hour_time = datetime(local_date.year, local_date.month, local_date.day, i, 0, 0, tzinfo=self.timezone)
-            a = sun.azimuth(self._observer, hour_time)
-            self.degs.append(float(a) if a is not None else 0)
+          self.degs = [(d + 180) % 360 for d in self.degs]
 
         # Moon data
         self.moon_info = pylunar.MoonInfo(self.decdeg2dms(conf.latitude), self.decdeg2dms(conf.longitude))
@@ -85,6 +85,13 @@ class Shadow:
         self.sun_azimuth = sun.azimuth(self._observer, self.now)
         self.sun_elevation = sun.elevation(self._observer, self.now)
 
+        self.degs = []
+        local_date = self.now.date()
+        for i in range(0, 24, HOURS):
+            hour_time = datetime(local_date.year, local_date.month, local_date.day, i, 0, 0, tzinfo=self.timezone)
+            a = sun.azimuth(self._observer, hour_time)
+            self.degs.append(float(a) if a is not None else 0)
+
         # --- Southern Hemisphere normalization ---
         # Astral returns correct azimuths, but the rendering logic assumes a Northern Hemisphere sun path (noon ≈ 180°). In the Southern
         # Hemisphere noon is ≈ 0°, so we rotate the frame by 180°.
@@ -93,13 +100,7 @@ class Shadow:
             self.sunrise_azimuth = (self.sunrise_azimuth + 180) % 360
             self.sunset_azimuth = (self.sunset_azimuth + 180) % 360
             self.sun_azimuth = (self.sun_azimuth + 180) % 360
-
-        self.degs = []
-        local_date = self.now.date()
-        for i in range(0, 24, HOURS):
-            hour_time = datetime(local_date.year, local_date.month, local_date.day, i, 0, 0, tzinfo=self.timezone)
-            a = sun.azimuth(self._observer, hour_time)
-            self.degs.append(float(a) if a is not None else 0)
+            self.degs = [(d + 180) % 360 for d in self.degs]
 
         self.moon_info.update(self.nowUTC.replace(tzinfo=None))
         self.moon_azimuth = self.moon_info.azimuth()
