@@ -1,13 +1,13 @@
 import logging
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.typing import DiscoveryInfoType
+from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.const import CONF_LATITUDE, CONF_LONGITUDE, CONF_ELEVATION, CONF_NAME, CONF_TIME_ZONE
 from .shadow_core import Shadow, ShadowConfig
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_platform(hass: HomeAssistant, config: dict, async_add_entities, discovery_info: DiscoveryInfoType | None = None):
+async def async_setup_platform(hass: HomeAssistant, config: ConfigType, async_add_entities, discovery_info: DiscoveryInfoType | None = None):
     """Set up the Shadow sensor platform."""
     name = config.get(CONF_NAME, "Shadow")
     latitude = config.get(CONF_LATITUDE, hass.config.latitude)
